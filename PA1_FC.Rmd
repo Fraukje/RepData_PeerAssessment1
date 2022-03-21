@@ -6,14 +6,27 @@ output:
     keep_md: true
 ---
 
+Loading and pre-processing the data
+```{r}
+#Read the csv file
+activity_data <- read.csv("activity.csv")
+```
 
-## Loading and preprocessing the data
+What is mean total number of steps taken per day?
+```{r}
+#First, calculate the total number of steps taken on a date (day)
+totalsteps_perday <- aggregate(activity_data$steps, list(activity_data$date), FUN=sum)$x
+#Then, plot the histogram of total steps taken per day
+h <- hist(totalsteps_perday, plot = FALSE)
+plot(h, 
+     xlab = 'Total number of steps taken per day', 
+     main = 'Histogram: Steps per day', 
+     col = 'green')
 
-
-
-## What is mean total number of steps taken per day?
-
-
+#Finally, print the mean and median
+cat('Mean of the total number of steps taken per day: ', mean(totalsteps_perday, na.rm = TRUE)); cat('\n')
+cat('Median of the total number of steps taken per day: ', median(totalsteps_perday, na.rm = TRUE))
+```
 
 ## What is the average daily activity pattern?
 

@@ -6,20 +6,21 @@ output:
     keep_md: true
 ---
 
-Loading and pre-processing the data
-```{r}
+# 1. Loading and pre-processing the data
+```{r Load csv + ignore NA}
 #Read the csv file
 activity_data <- read.csv("activity.csv")
 
 #Ignore rows with NA values
-activity_data_clean <- na.omit(activity_data); rm(activity_data)
+activity_data_clean <- na.omit(activity_data)
 ```
 
-What is mean total number of steps taken per day?
-```{r}
+# 2. What is mean total number of steps taken per day?
+```{r Calculate mean total number}
 #First, calculate the total number of steps taken on a date (day)
 totalsteps_perday <- aggregate(activity_data_clean$steps, list(activity_data_clean$date), FUN=sum)$x
-
+```
+```{r Plot histogram}
 #Then, plot the histogram of total steps taken per day
 h <- hist(totalsteps_perday, plot = FALSE)
 plot(h, 
@@ -30,13 +31,16 @@ plot(h,
 #Finally, print the mean and median
 cat('Mean of the total number of steps taken per day: ', mean(totalsteps_perday, na.rm = TRUE)); cat('\n')
 cat('Median of the total number of steps taken per day: ', median(totalsteps_perday, na.rm = TRUE))
+
+rm(h)
 ```
 
-What is the average daily activity pattern?
-```{r}
+# 3. What is the average daily activity pattern?
+```{r Calculate avg daily activity pattern}
 #Find the average number of steps per interval
 averagesteps_perinterval <- aggregate(activity_data_clean$steps, list(activity_data_clean$interval), FUN=mean)
-
+```
+```{r Plot}
 #Plot interval with average steps
 plot(averagesteps_perinterval, 
      type = 'l', 
@@ -45,12 +49,51 @@ plot(averagesteps_perinterval,
      main = 'Average daily activity pattern')
 
 #Find the interval with the max average number of steps
-cat("The 5-minute interval, on average across all the days in the dataset, that contains the maximum number of steps is: ", max(averagesteps_perinterval))
+cat("The 5-minute interval, on average across all the days in the dataset, that contains the maximum number of steps is: ", averagesteps_perinterval$Group.1[[which.max(averagesteps_perinterval$x)]])
 ```
 
+# 4. Imputing missing values
+There are a number of days/intervals where there are missing values (coded as \color{red}{\verb|NA|}NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
 
-## Imputing missing values
+```{r Number of incomplete cases}
+#Find number of incomplete cases (i.e. rows having at least 1 NA value)
+cat('The number of incomplete cases is: ', sum(!complete.cases(activity_data)))
+```
+Now let us implement a strategy to impute missing data. In statistics, imputation is the process of replacing missing data with substituted values.
+For now, we will substitute any missing value with the mean 5-minute value for that interval (as we have described and calculated in the previous section "What is the average daily activity pattern?")
+```{r Set up methods for imputing}
+# First import library needed and define an impute function
+library(data.table)
+impute.mean <- function(x) replace(x, is.na(x), mean(x, na.rm = TRUE))
+```
+```{r Create imputed data}
+# Then create a dataset with imputed data for the steps column (based on interval mean)
+activity_data_imputed <- activity_data[,steps := impute.mean(steps), by = interval]
+
+totalsteps_perday_imputed <- aggregate(activity_data_imputed$steps, list(activity_data_imputed$date), FUN=sum)$x
+```
+```{r Plot histogram}
+# Plot the histogram of imputed total steps taken per day
+h <- hist(totalsteps_perday_imputed, plot = FALSE)
+plot(h, 
+     xlab = 'Total number of steps taken per day', 
+     main = 'Histogram: Steps per day', 
+     col = 'green')
+
+#Finally, print the mean and median of imputed total number of steps
+cat('Mean of the total number of steps taken per day: ', mean(totalsteps_perday_imputed, na.rm = TRUE)); cat('\n')
+cat('Median of the total number of steps taken per day: ', median(totalsteps_perday_imputed, na.rm = TRUE))
+```
+## To impute or not to impute?
+Interestingly, the mean and median of the imputed data differ very little from earlier (un-imputed) calculations. However, comparing the histogram of the imputed data with the non-imputed data, there is an obvious difference: the imputed data shows a more narrow distribution of data. In other words: more of the data is centered around the mean / lower variance, which makes sense since we replaced NA values with mean values. This is very important impact that imputation can have on data, and subsequent analysis, so it is always important to include this impact into your reasoning for choosing to impute or not. 
+
+# 5. Are there differences in activity patterns between weekdays and weekends?
 
 
 
-## Are there differences in activity patterns between weekdays and weekends?
+
+
+
+
+
+

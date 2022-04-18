@@ -88,12 +88,41 @@ cat('Median of the total number of steps taken per day: ', median(totalsteps_per
 Interestingly, the mean and median of the imputed data differ very little from earlier (un-imputed) calculations. However, comparing the histogram of the imputed data with the non-imputed data, there is an obvious difference: the imputed data shows a more narrow distribution of data. In other words: more of the data is centered around the mean / lower variance, which makes sense since we replaced NA values with mean values. This is very important impact that imputation can have on data, and subsequent analysis, so it is always important to include this impact into your reasoning for choosing to impute or not. 
 
 # 5. Are there differences in activity patterns between weekdays and weekends?
+```{r Add df factor daytype}
+#Create index vector that holds day of week name
+vec_weekday <- weekdays(as.Date(activity_data_imputed$date), abbreviate = TRUE) 
+#Add column to df filled with 'weekday'
+activity_data_imputed$daytype <- "weekday"          
+#Find Saturdays and Sundays are replace values to 'weekend'
+activity_data_imputed$daytype[grep(paste("Sat", "Sun", sep="|"), vec_weekday)] <- "weekend" 
+```
+```{r Calculate avg daily activity pattern for week/weekend-days}
+#Separate weekday from weekend-day data
+activity_data_imputed_week    <- activity_data_imputed[activity_data_imputed$daytype=='weekday',]
+activity_data_imputed_weekend <- activity_data_imputed[activity_data_imputed$daytype=='weekend',]
 
+#Find the average number of steps per interval
+averagesteps_perinterval_week    <- aggregate(activity_data_imputed_week$steps,
+                                              list(activity_data_imputed_week$interval), 
+                                              FUN=mean)
+averagesteps_perinterval_week$daytype <- "week"
+averagesteps_perinterval_weekend <- aggregate(activity_data_imputed_weekend$steps,
+                                              list(activity_data_imputed_weekend$interval), 
+                                              FUN=mean)
+averagesteps_perinterval_weekend$daytype <- "weekend"
+# Merge data into one dataframe
+averagesteps_perinterval_weekweekend <- rbind(averagesteps_perinterval_week, averagesteps_perinterval_weekend)
 
+```
+```{r Plot time series in lattice format}
+library(lattice)
+#Plot time series of average number of steps in weekend & weekdays in one lattice view
+xyplot(x ~ Group.1 | daytype,
+       data = averagesteps_perinterval_weekweekend,
+       xlab = 'Interval',
+       ylab = 'Number of steps',
+       type = 'l',
+       layout = c(1,2),
+       head = 'weekend')
 
-
-
-
-
-
-
+```
